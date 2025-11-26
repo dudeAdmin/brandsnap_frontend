@@ -38,13 +38,52 @@ const ProjectView = () => {
         }
     };
 
+    const handleDeleteCampaign = async (campaignId, e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        if (window.confirm('Are you sure you want to delete this campaign? This will also delete all associated assets.')) {
+            try {
+                await api.delete(`/api/campaigns/${campaignId}`);
+                fetchProjectData();
+            } catch (error) {
+                console.error("Error deleting campaign", error);
+                alert('Failed to delete campaign. Please try again.');
+            }
+        }
+    };
+
+    const handleDeleteProject = async () => {
+        if (window.confirm('Are you sure you want to delete this project? This will also delete all associated campaigns and assets.')) {
+            try {
+                await api.delete(`/api/projects/${projectId}`);
+                window.location.href = '/dashboard';
+            } catch (error) {
+                console.error("Error deleting project", error);
+                alert('Failed to delete project. Please try again.');
+            }
+        }
+    };
+
     if (!project) return <div>Loading...</div>;
 
     return (
         <>
             <Navbar />
             <div className="container mx-auto px-4 py-8">
-                <Link to="/dashboard" className="text-brand-blue hover:underline mb-4 block">&larr; Back to Dashboard</Link>
+                <div className="flex justify-between items-center mb-4">
+                    <Link to="/dashboard" className="text-brand-blue hover:underline">
+                        &larr; Back to Dashboard
+                    </Link>
+                    <button
+                        onClick={handleDeleteProject}
+                        className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg font-semibold transition-colors flex items-center gap-2"
+                    >
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                            <path fillRule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clipRule="evenodd" />
+                        </svg>
+                        Delete Project
+                    </button>
+                </div>
                 <h1 className="text-3xl font-bold mb-2 text-brand-navy">{project.title}</h1>
                 <p className="text-gray-600 mb-8">{project.description}</p>
 
@@ -65,12 +104,23 @@ const ProjectView = () => {
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     {campaigns.map(campaign => (
-                        <Link to={`/campaign/${campaign.id}`} key={campaign.id} className="block">
-                            <div className="bg-white p-6 rounded shadow hover:shadow-lg transition">
-                                <h3 className="text-xl font-bold mb-2">{campaign.purpose}</h3>
-                                <p className="text-gray-500">{campaign.assets ? campaign.assets.length : 0} Assets</p>
-                            </div>
-                        </Link>
+                        <div key={campaign.id} className="relative">
+                            <Link to={`/campaign/${campaign.id}`} className="block">
+                                <div className="bg-white p-6 rounded shadow hover:shadow-lg transition">
+                                    <h3 className="text-xl font-bold mb-2">{campaign.purpose}</h3>
+                                    <p className="text-gray-500">{campaign.assetCount || 0} Assets</p>
+                                </div>
+                            </Link>
+                            <button
+                                onClick={(e) => handleDeleteCampaign(campaign.id, e)}
+                                className="absolute top-4 right-4 bg-red-500 hover:bg-red-600 text-white p-2 rounded-lg transition-colors"
+                                title="Delete Campaign"
+                            >
+                                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                                    <path fillRule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clipRule="evenodd" />
+                                </svg>
+                            </button>
+                        </div>
                     ))}
                 </div>
             </div>

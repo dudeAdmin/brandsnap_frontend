@@ -38,6 +38,20 @@ const Dashboard = () => {
         }
     };
 
+    const handleDeleteProject = async (projectId, e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        if (window.confirm('Are you sure you want to delete this project? This will also delete all associated campaigns and assets.')) {
+            try {
+                await api.delete(`/api/projects/${projectId}`);
+                fetchProjects();
+            } catch (error) {
+                console.error("Error deleting project", error);
+                alert('Failed to delete project. Please try again.');
+            }
+        }
+    };
+
     return (
         <>
             <Navbar />
@@ -70,13 +84,24 @@ const Dashboard = () => {
 
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                     {projects.map(project => (
-                        <Link to={`/project/${project.id}`} key={project.id} className="block">
-                            <div className="bg-white p-6 rounded shadow hover:shadow-lg transition">
-                                <h3 className="text-xl font-bold mb-2">{project.title}</h3>
-                                <p className="text-gray-600">{project.description}</p>
-                                <p className="text-sm text-gray-400 mt-4">Created: {new Date(project.createdAt).toLocaleDateString()}</p>
-                            </div>
-                        </Link>
+                        <div key={project.id} className="relative">
+                            <Link to={`/project/${project.id}`} className="block">
+                                <div className="bg-white p-6 rounded shadow hover:shadow-lg transition">
+                                    <h3 className="text-xl font-bold mb-2">{project.title}</h3>
+                                    <p className="text-gray-600">{project.description}</p>
+                                    <p className="text-sm text-gray-400 mt-4">Created: {new Date(project.createdAt).toLocaleDateString()}</p>
+                                </div>
+                            </Link>
+                            <button
+                                onClick={(e) => handleDeleteProject(project.id, e)}
+                                className="absolute top-4 right-4 bg-red-500 hover:bg-red-600 text-white p-2 rounded-lg transition-colors"
+                                title="Delete Project"
+                            >
+                                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                                    <path fillRule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clipRule="evenodd" />
+                                </svg>
+                            </button>
+                        </div>
                     ))}
                 </div>
             </div>
