@@ -4,6 +4,7 @@ import { api } from '../context/AuthContext';
 import Navbar from '../components/Navbar';
 import ImageModal from '../components/ImageModal';
 import Footer from '../components/Footer';
+import PromptSelector from '../components/PromptSelector';
 
 const CampaignView = () => {
     const { campaignId } = useParams();
@@ -89,6 +90,14 @@ const CampaignView = () => {
         }
     };
 
+    const handleSelectPrompt = (promptTemplate) => {
+        setPrompt(promptTemplate);
+    };
+
+    const handleClearPrompt = () => {
+        setPrompt('');
+    };
+
     if (!campaign) return <div>Loading...</div>;
 
     return (
@@ -120,6 +129,9 @@ const CampaignView = () => {
                             <button onClick={() => setSelectedAsset(null)} className="text-xs text-red-500 ml-2">Clear context</button>
                         </div>
                     )}
+
+                    {/* Prompt Selector Component */}
+                    <PromptSelector onSelectPrompt={handleSelectPrompt} />
 
                     {/* Image Upload Section */}
                     <div className="mb-4">
@@ -154,13 +166,33 @@ const CampaignView = () => {
                         )}
                     </div>
 
-                    <textarea
-                        className="w-full border p-2 rounded mb-4"
-                        rows="3"
-                        placeholder="Describe the image you want to generate..."
-                        value={prompt}
-                        onChange={(e) => setPrompt(e.target.value)}
-                    ></textarea>
+                    {/* Prompt Textarea with Clear Button */}
+                    <div className="mb-4">
+                        <div className="flex justify-between items-center mb-2">
+                            <label className="block text-sm font-medium text-gray-700">
+                                Your Prompt
+                            </label>
+                            {prompt && (
+                                <button
+                                    onClick={handleClearPrompt}
+                                    className="text-sm text-red-500 hover:text-red-700 font-medium flex items-center gap-1"
+                                >
+                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                                        <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
+                                    </svg>
+                                    Clear Prompt
+                                </button>
+                            )}
+                        </div>
+                        <textarea
+                            className="w-full border border-gray-300 p-3 rounded-lg focus:ring-2 focus:ring-brand-blue focus:border-transparent"
+                            rows="4"
+                            placeholder="Describe the image you want to generate..."
+                            value={prompt}
+                            onChange={(e) => setPrompt(e.target.value)}
+                        ></textarea>
+                    </div>
+
                     <button
                         onClick={handleGenerate}
                         disabled={generating || !prompt}
