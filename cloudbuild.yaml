@@ -1,0 +1,24 @@
+# Cloud Build configuration for frontend
+steps:
+  # Build the Docker image with build argument
+  - name: "gcr.io/cloud-builders/docker"
+    args:
+      - "build"
+      - "--build-arg"
+      - "VITE_API_BASE_URL=${_VITE_API_BASE_URL}"
+      - "-t"
+      - "gcr.io/$PROJECT_ID/brandsnap-frontend"
+      - "."
+
+  # Push the image to Container Registry
+  - name: "gcr.io/cloud-builders/docker"
+    args:
+      - "push"
+      - "gcr.io/$PROJECT_ID/brandsnap-frontend"
+
+# Substitution variables
+substitutions:
+  _VITE_API_BASE_URL: "http://localhost:8080" # Default value, override when deploying
+
+images:
+  - "gcr.io/$PROJECT_ID/brandsnap-frontend"

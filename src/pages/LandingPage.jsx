@@ -43,12 +43,6 @@ const LandingPage = () => {
                             >
                                 Get Started
                             </Link>
-                            <button className="px-8 py-3 text-lg font-semibold text-brand-blue border-2 border-brand-blue hover:bg-blue-50 rounded-lg transition-colors flex items-center gap-2">
-                                <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-                                    <path d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" />
-                                </svg>
-                                Watch Demo
-                            </button>
                         </div>
                     </div>
 
@@ -77,6 +71,30 @@ const LandingPage = () => {
                                 <Zap className="text-brand-blue" size={24} />
                             </div>
                         </div>
+                    </div>
+                </div>
+            </section>
+
+            {/* Demo Video Section */}
+            <section className="container mx-auto px-4 py-16">
+                <div className="text-center mb-12">
+                    <h2 className="text-4xl font-bold text-brand-navy mb-4">
+                        See BrandSnap in Action
+                    </h2>
+                    <p className="text-xl text-gray-600 max-w-2xl mx-auto">
+                        Watch how easy it is to create stunning, on-brand visuals in seconds
+                    </p>
+                </div>
+                <div className="max-w-5xl mx-auto">
+                    <div className="relative rounded-2xl overflow-hidden shadow-2xl bg-gray-900">
+                        <video 
+                            className="w-full h-auto"
+                            controls
+                            poster="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='1920' height='1080'%3E%3Crect width='1920' height='1080' fill='%23111827'/%3E%3C/svg%3E"
+                        >
+                            <source src="https://storage.googleapis.com/prateek_hub_bucket/BrandSnap_1080.mp4" type="video/mp4" />
+                            Your browser does not support the video tag.
+                        </video>
                     </div>
                 </div>
             </section>

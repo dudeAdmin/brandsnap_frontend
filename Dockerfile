@@ -1,8 +1,13 @@
+
 # Multi-stage build for React + Vite application
 
 # Stage 1: Build
 FROM node:20-alpine AS build
 WORKDIR /app
+
+# Accept build argument for API URL
+ARG VITE_API_BASE_URL
+ENV VITE_API_BASE_URL=$VITE_API_BASE_URL
 
 # Copy package files and install dependencies
 COPY package*.json ./
@@ -11,6 +16,7 @@ RUN npm ci
 # Copy source code and build
 COPY . .
 RUN npm run build
+
 
 # Stage 2: Serve with Nginx
 FROM nginx:alpine
