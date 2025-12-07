@@ -5,6 +5,7 @@ import Navbar from '../components/Navbar';
 import ImageModal from '../components/ImageModal';
 import Footer from '../components/Footer';
 import PromptSelector from '../components/PromptSelector';
+import Loader from '../components/Loader';
 
 const CampaignView = () => {
     const { campaignId } = useParams();
@@ -15,6 +16,9 @@ const CampaignView = () => {
     const [selectedAsset, setSelectedAsset] = useState(null);
     const [viewingImage, setViewingImage] = useState(null);
     const [uploadedImage, setUploadedImage] = useState(null);
+    const [loading, setLoading] = useState(true);
+    const [deletingAssetId, setDeletingAssetId] = useState(null);
+    const [deletingCampaign, setDeletingCampaign] = useState(false);
 
     useEffect(() => {
         fetchCampaignData();
@@ -22,12 +26,15 @@ const CampaignView = () => {
 
     const fetchCampaignData = async () => {
         try {
+            setLoading(true);
             const campRes = await api.get(`/api/campaigns/${campaignId}`);
             setCampaign(campRes.data);
             const assetsRes = await api.get(`/api/assets?campaignId=${campaignId}`);
             setAssets(assetsRes.data);
         } catch (error) {
             console.error("Error fetching data", error);
+        } finally {
+            setLoading(false);
         }
     };
 
@@ -69,23 +76,29 @@ const CampaignView = () => {
 
     const handleDelete = async (assetId) => {
         if (window.confirm('Are you sure you want to delete this asset?')) {
+            setDeletingAssetId(assetId);
             try {
                 await api.delete(`/api/assets/${assetId}`);
                 fetchCampaignData();
             } catch (error) {
                 console.error("Error deleting asset", error);
+            } finally {
+                setDeletingAssetId(null);
             }
         }
     };
 
     const handleDeleteCampaign = async () => {
         if (window.confirm('Are you sure you want to delete this campaign? This will also delete all associated assets.')) {
+            setDeletingCampaign(true);
             try {
                 await api.delete(`/api/campaigns/${campaignId}`);
                 window.location.href = `/project/${campaign.project.id}`;
             } catch (error) {
                 console.error("Error deleting campaign", error);
                 alert('Failed to delete campaign. Please try again.');
+            } finally {
+                setDeletingCampaign(false);
             }
         }
     };
@@ -98,7 +111,7 @@ const CampaignView = () => {
         setPrompt('');
     };
 
-    if (!campaign) return <div>Loading...</div>;
+    if (loading || !campaign) return <Loader text="Loading campaign..." />;
 
     return (
         <>
@@ -110,12 +123,24 @@ const CampaignView = () => {
                     </Link>
                     <button
                         onClick={handleDeleteCampaign}
-                        className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg font-semibold transition-colors flex items-center gap-2"
+                        disabled={deletingCampaign}
+                        className={`px-4 py-2 rounded-lg font-semibold transition-colors flex items-center gap-2 ${
+                            deletingCampaign ? 'bg-gray-400 cursor-not-allowed' : 'bg-red-500 hover:bg-red-600 text-white'
+                        }`}
                     >
-                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                            <path fillRule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clipRule="evenodd" />
-                        </svg>
-                        Delete Campaign
+                        {deletingCampaign ? (
+                            <>
+                                <Loader size="small" inline={true} />
+                                <span>Deleting...</span>
+                            </>
+                        ) : (
+                            <>
+                                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                                    <path fillRule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clipRule="evenodd" />
+                                </svg>
+                                Delete Campaign
+                            </>
+                        )}
                     </button>
                 </div>
                 <h1 className="text-3xl font-bold mb-2 text-brand-navy">{campaign.purpose}</h1>
@@ -196,9 +221,16 @@ const CampaignView = () => {
                     <button
                         onClick={handleGenerate}
                         disabled={generating || !prompt}
-                        className={`px-6 py-2 rounded-lg text-white font-semibold transition-colors ${generating ? 'bg-gray-400' : 'bg-brand-blue hover:bg-blue-600'}`}
+                        className={`px-6 py-2 rounded-lg text-white font-semibold transition-colors flex items-center gap-2 ${generating ? 'bg-gray-400 cursor-not-allowed' : 'bg-brand-blue hover:bg-blue-600'}`}
                     >
-                        {generating ? 'Generating...' : 'Generate Asset'}
+                        {generating ? (
+                            <>
+                                <Loader size="small" inline={true} />
+                                <span>Generating...</span>
+                            </>
+                        ) : (
+                            'Generate Asset'
+                        )}
                     </button>
                 </div>
 
@@ -217,7 +249,22 @@ const CampaignView = () => {
                                 <p className="text-sm text-gray-500 truncate mb-4">{asset.prompt}</p>
                                 <div className="flex justify-between">
                                     <button onClick={() => handleEdit(asset)} className="text-blue-600 hover:text-blue-800 text-sm font-medium">Edit</button>
-                                    <button onClick={() => handleDelete(asset.id)} className="text-red-600 hover:text-red-800 text-sm font-medium">Delete</button>
+                                    <button 
+                                        onClick={() => handleDelete(asset.id)} 
+                                        disabled={deletingAssetId === asset.id}
+                                        className={`text-sm font-medium flex items-center gap-1 ${
+                                            deletingAssetId === asset.id ? 'text-gray-400 cursor-not-allowed' : 'text-red-600 hover:text-red-800'
+                                        }`}
+                                    >
+                                        {deletingAssetId === asset.id ? (
+                                            <>
+                                                <Loader size="small" inline={true} />
+                                                <span>Deleting...</span>
+                                            </>
+                                        ) : (
+                                            'Delete'
+                                        )}
+                                    </button>
                                 </div>
                             </div>
                         </div>

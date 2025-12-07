@@ -3,12 +3,17 @@ import { useParams, Link } from 'react-router-dom';
 import { api } from '../context/AuthContext';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
+import Loader from '../components/Loader';
 
 const ProjectView = () => {
     const { projectId } = useParams();
     const [project, setProject] = useState(null);
     const [campaigns, setCampaigns] = useState([]);
     const [newCampaignPurpose, setNewCampaignPurpose] = useState('');
+    const [loading, setLoading] = useState(true);
+    const [creating, setCreating] = useState(false);
+    const [deletingId, setDeletingId] = useState(null);
+    const [deletingProject, setDeletingProject] = useState(false);
 
     useEffect(() => {
         fetchProjectData();
@@ -16,17 +21,21 @@ const ProjectView = () => {
 
     const fetchProjectData = async () => {
         try {
+            setLoading(true);
             const projRes = await api.get(`/api/projects/${projectId}`);
             setProject(projRes.data);
             const campRes = await api.get(`/api/campaigns?projectId=${projectId}`);
             setCampaigns(campRes.data);
         } catch (error) {
             console.error("Error fetching data", error);
+        } finally {
+            setLoading(false);
         }
     };
 
     const createCampaign = async (e) => {
         e.preventDefault();
+        setCreating(true);
         try {
             await api.post(`/api/campaigns?projectId=${projectId}`, {
                 purpose: newCampaignPurpose
@@ -35,6 +44,8 @@ const ProjectView = () => {
             fetchProjectData();
         } catch (error) {
             console.error("Error creating campaign", error);
+        } finally {
+            setCreating(false);
         }
     };
 
@@ -42,29 +53,35 @@ const ProjectView = () => {
         e.preventDefault();
         e.stopPropagation();
         if (window.confirm('Are you sure you want to delete this campaign? This will also delete all associated assets.')) {
+            setDeletingId(campaignId);
             try {
                 await api.delete(`/api/campaigns/${campaignId}`);
                 fetchProjectData();
             } catch (error) {
                 console.error("Error deleting campaign", error);
                 alert('Failed to delete campaign. Please try again.');
+            } finally {
+                setDeletingId(null);
             }
         }
     };
 
     const handleDeleteProject = async () => {
         if (window.confirm('Are you sure you want to delete this project? This will also delete all associated campaigns and assets.')) {
+            setDeletingProject(true);
             try {
                 await api.delete(`/api/projects/${projectId}`);
                 window.location.href = '/dashboard';
             } catch (error) {
                 console.error("Error deleting project", error);
                 alert('Failed to delete project. Please try again.');
+            } finally {
+                setDeletingProject(false);
             }
         }
     };
 
-    if (!project) return <div>Loading...</div>;
+    if (loading || !project) return <Loader text="Loading project..." />;
 
     return (
         <>
@@ -76,12 +93,24 @@ const ProjectView = () => {
                     </Link>
                     <button
                         onClick={handleDeleteProject}
-                        className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg font-semibold transition-colors flex items-center gap-2"
+                        disabled={deletingProject}
+                        className={`px-4 py-2 rounded-lg font-semibold transition-colors flex items-center gap-2 ${
+                            deletingProject ? 'bg-gray-400 cursor-not-allowed' : 'bg-red-500 hover:bg-red-600 text-white'
+                        }`}
                     >
-                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                            <path fillRule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clipRule="evenodd" />
-                        </svg>
-                        Delete Project
+                        {deletingProject ? (
+                            <>
+                                <Loader size="small" inline={true} />
+                                <span>Deleting...</span>
+                            </>
+                        ) : (
+                            <>
+                                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                                    <path fillRule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clipRule="evenodd" />
+                                </svg>
+                                Delete Project
+                            </>
+                        )}
                     </button>
                 </div>
                 <h1 className="text-3xl font-bold mb-2 text-brand-navy">{project.title}</h1>
@@ -98,7 +127,22 @@ const ProjectView = () => {
                             onChange={(e) => setNewCampaignPurpose(e.target.value)}
                             required
                         />
-                        <button type="submit" className="bg-brand-blue text-white px-6 py-2 rounded-lg hover:bg-blue-600 font-semibold transition-colors">Create</button>
+                        <button 
+                            type="submit" 
+                            disabled={creating}
+                            className={`px-6 py-2 rounded-lg font-semibold transition-colors flex items-center gap-2 ${
+                                creating ? 'bg-gray-400 cursor-not-allowed' : 'bg-brand-blue text-white hover:bg-blue-600'
+                            }`}
+                        >
+                            {creating ? (
+                                <>
+                                    <Loader size="small" inline={true} />
+                                    <span>Creating...</span>
+                                </>
+                            ) : (
+                                'Create'
+                            )}
+                        </button>
                     </form>
                 </div>
 
@@ -113,12 +157,19 @@ const ProjectView = () => {
                             </Link>
                             <button
                                 onClick={(e) => handleDeleteCampaign(campaign.id, e)}
-                                className="absolute top-4 right-4 bg-red-500 hover:bg-red-600 text-white p-2 rounded-lg transition-colors"
+                                disabled={deletingId === campaign.id}
+                                className={`absolute top-4 right-4 p-2 rounded-lg transition-colors ${
+                                    deletingId === campaign.id ? 'bg-gray-400 cursor-not-allowed' : 'bg-red-500 hover:bg-red-600 text-white'
+                                }`}
                                 title="Delete Campaign"
                             >
-                                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                                    <path fillRule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clipRule="evenodd" />
-                                </svg>
+                                {deletingId === campaign.id ? (
+                                    <Loader size="small" inline={true} />
+                                ) : (
+                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                                        <path fillRule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clipRule="evenodd" />
+                                    </svg>
+                                )}
                             </button>
                         </div>
                     ))}

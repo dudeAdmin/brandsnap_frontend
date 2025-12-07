@@ -2,41 +2,53 @@ import React, { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { GoogleLogin } from '@react-oauth/google';
+import Loader from '../components/Loader';
 
 const Login = () => {
     const [isLogin, setIsLogin] = useState(true);
     const [username, setUsername] = useState('');
     const [password, setPassword] = useState('');
     const [email, setEmail] = useState('');
+    const [loading, setLoading] = useState(false);
     const { login, register, loginWithGoogle } = useAuth();
     const navigate = useNavigate();
 
     const handleSubmit = async (e) => {
         e.preventDefault();
+        setLoading(true);
         let result;
-        if (isLogin) {
-            result = await login(username, password);
-        } else {
-            result = await register({ username, email, password });
-            if (result.success) {
-                // Auto login after register
+        try {
+            if (isLogin) {
                 result = await login(username, password);
+            } else {
+                result = await register({ username, email, password });
+                if (result.success) {
+                    // Auto login after register
+                    result = await login(username, password);
+                }
             }
-        }
 
-        if (result.success) {
-            navigate('/dashboard');
-        } else {
-            alert(result.message || 'Authentication failed');
+            if (result.success) {
+                navigate('/dashboard');
+            } else {
+                alert(result.message || 'Authentication failed');
+            }
+        } finally {
+            setLoading(false);
         }
     };
 
     const handleGoogleSuccess = async (credentialResponse) => {
-        const result = await loginWithGoogle(credentialResponse.credential);
-        if (result.success) {
-            navigate('/dashboard');
-        } else {
-            alert(result.message || 'Google authentication failed');
+        setLoading(true);
+        try {
+            const result = await loginWithGoogle(credentialResponse.credential);
+            if (result.success) {
+                navigate('/dashboard');
+            } else {
+                alert(result.message || 'Google authentication failed');
+            }
+        } finally {
+            setLoading(false);
         }
     };
 
@@ -106,8 +118,21 @@ const Login = () => {
                             value={password} onChange={(e) => setPassword(e.target.value)} required />
                     </div>
                     <div className="flex items-baseline justify-between mt-6">
-                        <button className="px-6 py-3 text-white bg-brand-blue rounded-lg hover:bg-blue-600 font-semibold transition-colors shadow-lg">
-                            {isLogin ? 'Login' : 'Register'}
+                        <button 
+                            type="submit"
+                            disabled={loading}
+                            className={`px-6 py-3 text-white rounded-lg font-semibold transition-colors shadow-lg flex items-center gap-2 ${
+                                loading ? 'bg-gray-400 cursor-not-allowed' : 'bg-brand-blue hover:bg-blue-600'
+                            }`}
+                        >
+                            {loading ? (
+                                <>
+                                    <Loader size="small" inline={true} />
+                                    <span>Processing...</span>
+                                </>
+                            ) : (
+                                isLogin ? 'Login' : 'Register'
+                            )}
                         </button>
                         <a href="#" className="text-sm text-brand-blue hover:underline" onClick={(e) => { e.preventDefault(); setIsLogin(!isLogin); }}>
                             {isLogin ? 'Need an account?' : 'Already have an account?'}
